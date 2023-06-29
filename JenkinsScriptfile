@@ -1,0 +1,52 @@
+pipeline
+{
+agent any
+stages
+{
+stage ('Export IAR File from the OIC Dev Instance')
+{
+steps
+{
+bat '''
+curl --location GET --header "Authorization: Basic ZGV2b3BzX3VzZXI6T2ljX0plbmtpbnMjMjAyMw==" -o C:/Users/mohpasha/Documents/GitHubJenkinsPOC/ADDINTEGERS.iar "https://testinstance-idevjxz332qf-ia.integration.ocp.oraclecloud.com/ic/api/integration/v1/integrations/ADDINTEGERS|01.00.0000/archive"
+'''
+}
+}
+stage('Deactivate the Integration before Deployment')
+{
+steps
+{
+bat '''
+curl -X POST --header "Authorization: Basic ZGV2b3BzX3VzZXI6T2ljX0plbmtpbnMjMjAyMw==" --header "Content-Type:application/json" --header "X-HTTP-Method-Override:PATCH" -d @C:/Users/mohpasha/Documents/GitHubJenkinsPOC/deActivateInt.json -d 'enableAsyncActivationMode=true' "https://testinstance-idevjxz332qf-ia.integration.ocp.oraclecloud.com/ic/api/integration/v1/integrations/ADDINTEGERS|01.00.0000"
+'''
+}
+}
+stage('Deployment of IAR Files to OIC Test Instance')
+{
+steps
+{
+bat '''
+curl -X PUT --header "Authorization: Basic ZGV2b3BzX3VzZXI6T2ljX0plbmtpbnMjMjAyMw==" --header "Accept:application/json" --form file=@ADDINTEGERS_01.00.0000.iar --form type=application/octet-stream https://testinstance-idevjxz332qf-ia.integration.ocp.oraclecloud.com/ic/api/integration/v1/integrations/archive
+'''
+}
+}
+stage('Configure Rest Conn')
+{
+steps
+{
+bat '''
+curl --header "Authorization: Basic ZGV2b3BzX3VzZXI6T2ljX0plbmtpbnMjMjAyMw==" --header "X-HTTP-Method-Override:PATCH" --header "Content-Type:application/json" -d @restconnprop.json https://testinstance-idevjxz332qf-ia.integration.ocp.oraclecloud.com/ic/api/integration/v1/connections/RESTCON_CS
+'''
+}
+}
+stage('Activating the Integration')
+{
+steps
+{
+bat '''
+curl --header "Authorization: Basic ZGV2b3BzX3VzZXI6T2ljX0plbmtpbnMjMjAyMw==" --header "Content-Type:application/json" --header "X-HTTP-Method-Override:PATCH" -d @update.json --location "https://testinstance-idevjxz332qf-ia.integration.ocp.oraclecloud.com/ic/api/integration/v1/integrations/ADDINTEGERS|01.00.0000"
+'''
+}
+}
+}
+}
